@@ -32,7 +32,7 @@ parser.add_argument('--range_x', dest= "range_x", default=2048, help="2048")
 
 
 # network settings
-parser.add_argument('--backbone', dest= "backbone", default="ResNet34_aspp", help="ResNet18 or ResNet18_aspp or ResNet34_aspp or ResNet50_aspp")
+parser.add_argument('--backbone', dest= "backbone", default="ResNet34_aspp_1", help="ResNet18 or ResNet18_aspp or ResNet34_aspp or ResNet34_aspp_NN or ResNet34_aspp_1")
 parser.add_argument('--batch_size', dest= "batch_size", default=2, help="bs")
 parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in the backbone net")
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
@@ -81,8 +81,8 @@ if args.backbone=="ResNet18_aspp":
 if args.backbone=="ResNet34_aspp":
 	Backend=resnet34_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
-if args.backbone=="ResNet50_aspp":
-	Backend=resnet50_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+if args.backbone=="ResNet34_aspp_1":
+	Backend=resnet34_aspp_1(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
 
 

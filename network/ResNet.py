@@ -652,10 +652,10 @@ class ResNet_ASPP_NN(nn.Module):
     def forward(self, x):
         return self._forward_impl(x)
 
-class ResNet_ASPP_extra(nn.Module):
+class ResNet_ASPP_1(nn.Module):
 
     def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
-        super(ResNet_ASPP_extra, self).__init__()
+        super(ResNet_ASPP_1, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -668,31 +668,34 @@ class ResNet_ASPP_extra(nn.Module):
    
         self.groups = groups
         self.base_width = width_per_group
+
         if self.if_remission and not self.if_range:
-            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.conv1 = nn.Conv2d(4, 128, kernel_size=1, stride=1, padding=0,bias=True)
         if self.if_range and self.if_range:
-            self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.conv1 = nn.Conv2d(5, 128, kernel_size=1, stride=1, padding=0,bias=True)
         if not self.if_remission and not self.if_range:        
-            self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.conv1 = nn.Conv2d(3, 128, kernel_size=1, stride=1, padding=0,bias=True)
 
-        self.conv_aspp_1=nn.Conv2d(64, 32, 3, padding=3, dilation=3, bias=False)
-        self.conv_aspp_2=nn.Conv2d(64, 32, 3, padding=6, dilation=6, bias=False)
-        self.conv_aspp_3=nn.Conv2d(64, 32, 3, padding=9, dilation=9, bias=False)
-        self.conv2 = nn.Conv2d(160, 128, kernel_size=1, stride=1, padding=0,bias=True)
 
+   
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=1, stride=1, padding=0,bias=False)
+        self.bn = nn.BatchNorm2d(128)
+        self.relu = nn.LeakyReLU()
+        
 
         self.layer1 = self._make_layer(block, 128, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 128, layers[2], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
 
-        self.conv_Aspp_1=nn.Conv2d(640, 128, 3, padding=3, dilation=3, bias=False)
+        self.conv_Aspp_1=nn.Conv2d(768, 128, 3, padding=3, dilation=3, bias=False)
         self.bn1 = nn.BatchNorm2d(128)
         self.relu_1 = nn.LeakyReLU()
-        self.conv_Aspp_2=nn.Conv2d(640, 128, 3, padding=6, dilation=6, bias=False)
+        self.conv_Aspp_2=nn.Conv2d(768, 128, 3, padding=6, dilation=6, bias=False)
         self.bn2 = nn.BatchNorm2d(128)
         self.relu_2 = nn.LeakyReLU()
-        self.conv_Aspp_3=nn.Conv2d(640, 128, 3, padding=9, dilation=9, bias=False)
+        
+        self.conv_Aspp_3=nn.Conv2d(768, 128, 3, padding=9, dilation=9, bias=False)
         self.bn3 = nn.BatchNorm2d(128)
         self.relu_3 = nn.LeakyReLU()
         
@@ -749,12 +752,9 @@ class ResNet_ASPP_extra(nn.Module):
         outputs = {}
         # See note [TorchScript super()]
         x = self.conv1(x)
-
-        x_aspp_1=self.conv_aspp_1(x)
-        x_aspp_2=self.conv_aspp_2(x)
-        x_aspp_3=self.conv_aspp_3(x)
-        x=torch.cat([x,x_aspp_1,x_aspp_2,x_aspp_3], dim=1)
         x = self.conv2(x)
+        x = self.bn(x)
+        x = self.relu(x)
        
         x_1 = self.layer1(x)  # 1
         x_2 = self.layer2(x_1)  # 1/2
@@ -784,12 +784,12 @@ class ResNet_ASPP_extra(nn.Module):
         res_3_3=self.conv_Aspp_3(res)
         res_3_3=self.bn3(res_3_3)
         res_3_3=self.relu_3(res_3_3)
-
         res_new=[res,res_1_1,res_2_2,res_3_3]
         return torch.cat(res_new, dim=1)
 
     def forward(self, x):
         return self._forward_impl(x)
+
 
 
 
@@ -808,8 +808,8 @@ def _resnet_aspp_NN(arch, block, layers, if_BN,if_remission,if_range):
 
     return model
 
-def _resnet_aspp_extra(arch, block, layers, if_BN,if_remission):
-    model = ResNet_ASPP_extra(block, layers, if_BN,if_remission,zero_init_residual=False)
+def _resnet_aspp_1(arch, block, layers, if_BN,if_remission,if_range):
+    model = ResNet_ASPP_1(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
 
     return model
 
@@ -853,14 +853,15 @@ def resnet34_aspp_NN(if_BN,if_remission,if_range):
     """
     return _resnet_aspp_NN('resnet34', BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
 
-def resnet50_aspp(if_BN,if_remission,if_range):
-    """ResNet-50 model from
+
+def resnet34_aspp_1(if_BN,if_remission,if_range):
+    """ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet_aspp('resnet50', Bottleneck, [3, 4, 6, 3], if_BN,if_remission,if_range)
+    return _resnet_aspp_1('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
 
 
 
