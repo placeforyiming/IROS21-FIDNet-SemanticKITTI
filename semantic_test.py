@@ -23,21 +23,14 @@ parser = argparse.ArgumentParser()
 #parameters for dataset
 parser.add_argument('--dataset',dest= "dataset", default='semanticKITTI', help='')
 parser.add_argument('--root',  dest= "root", default='./Dataset/semanticKITTI/',help="./Dataset/semanticKITTI/")
-parser.add_argument('--range_y', dest= "range_y", default=128, help="128")
+parser.add_argument('--range_y', dest= "range_y", default=64, help="128")
 parser.add_argument('--range_x', dest= "range_x", default=2048, help="2048")
 #parser.add_argument('--code_mode', dest= "code_mode", default="train", help="train or val")
 
 
-# data_loader
-#parser.add_argument('--if_aug', dest= "if_aug", default=True, help="if if_aug")
-parser.add_argument('--label_gap',  dest= "label_gap", default=0.2, help="the distance in meter for each bin in offset classification")
-parser.add_argument('--x_bin',  dest= "x_bin",default=40)
-parser.add_argument('--y_bin',  dest= "y_bin", default=34)
-parser.add_argument('--z_bin',  dest= "z_bin", default=16)
-
 
 # network settings
-parser.add_argument('--backbone', dest= "backbone", default="ResNet34_aspp", help="ResNet18 or ResNet18_aspp or ResNet34_aspp or ResNet50_aspp")
+parser.add_argument('--backbone', dest= "backbone", default="ResNet34_point", help="ResNet34_aspp_1,ResNet34_aspp_2,ResNet_34_point")
 parser.add_argument('--batch_size', dest= "batch_size", default=2, help="bs")
 parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in the backbone net")
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
@@ -47,7 +40,7 @@ parser.add_argument('--if_perturb', dest= "if_perturb", default=False, help="if 
 
 
 # training settins
-parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=31,help="0 or from the beginning, or from the middle")
+parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=22,help="0 or from the beginning, or from the middle")
 parser.add_argument('--lr_policy',  dest= "lr_policy", default=1,help="lr_policy: 1, 2 or 0")
 parser.add_argument('--weight_WCE',  dest= "weight_WCE", default=1.0,help="weight_WCE")
 parser.add_argument('--weight_LS',  dest= "weight_LS", default=3.0,help="weight_LS")
@@ -76,27 +69,23 @@ temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(ar
 save_path=save_path+temp_path+"/"
 
 
-if args.backbone=="ResNet18":
-	Backend=resnet18(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
-if args.backbone=="ResNet18_aspp":
-	Backend=resnet18_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+if args.backbone=="ResNet34_aspp_1":
+	Backend=resnet34_aspp_1(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1152)
 
-if args.backbone=="ResNet34_aspp":
-	Backend=resnet34_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
-
-if args.backbone=="ResNet50_aspp":
-	Backend=resnet50_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+if args.backbone=="ResNet34_aspp_2":
+	Backend=resnet34_aspp_2(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,128*13)
 
 
+if args.backbone=="ResNet34_point":
+	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1024)
 
 
-S_H=SemanticHead(20,1152)
-x_H=x_Head(args.x_bin,1152)
-y_H=y_Head(args.y_bin,1152)
-z_H=z_Head(args.z_bin,1152)
 
-model=Final_Model(Backend,S_H,x_H,y_H,z_H)
+model=Final_Model(Backend,S_H)
 
 device = torch.device('cuda:{}'.format(0))
 
@@ -104,12 +93,17 @@ device = torch.device('cuda:{}'.format(0))
 model.to(device)
 
 
-model.load_state_dict(torch.load(save_path+str(args.eval_epoch)+str(5000)))
+model.load_state_dict(torch.load(save_path+str(args.eval_epoch)))
 
 
 
 
 	   
+
+scale_x=np.expand_dims(np.ones([args.range_y, args.range_x])*50.0,axis=-1).astype(np.float32)
+scale_y=np.expand_dims(np.ones([args.range_y, args.range_x])*50.0,axis=-1).astype(np.float32)
+scale_z=np.expand_dims(np.ones([args.range_y, args.range_x])*3.0,axis=-1).astype(np.float32)
+scale_matrx=np.concatenate([scale_x,scale_y,scale_z],axis=2)
 
 
 A=LaserScan(project=True, flip_sign=False, H=args.range_y, W=args.range_x, fov_up=3.0, fov_down=-25.0)
@@ -154,13 +148,16 @@ for seq_name in all_seq_list:
 			os.remove(label_file)
 		A.open_scan(lidar_list[i])
 
+
 		#xyz = torch.unsqueeze(FF.to_tensor(np.expand_dims(A.proj_mask,axis=-1)*(A.proj_xyz-xyz_mean)/xyz_std),axis=0)
-		xyz = torch.unsqueeze(FF.to_tensor(A.proj_xyz),axis=0)
+		xyz = torch.unsqueeze(FF.to_tensor(A.proj_xyz/scale_matrx),axis=0)
 
 		#remission = torch.unsqueeze(FF.to_tensor(A.proj_mask*(A.proj_remission-remission_mean)/remission_std),axis=0)
 		remission = torch.unsqueeze(FF.to_tensor(A.proj_remission),axis=0)
 
-		range_img = torch.unsqueeze(FF.to_tensor(A.proj_range),axis=0)
+		range_img = torch.unsqueeze(FF.to_tensor(A.proj_range/80.0),axis=0)
+
+
 			
 		if args.if_remission and not args.if_range:
 			input_tensor=torch.cat([xyz,remission],axis=1)
@@ -170,12 +167,16 @@ for seq_name in all_seq_list:
 			input_tensor=xyz
 		input_tensor=input_tensor.to(device)
 		with torch.cuda.amp.autocast(enabled=args.if_mixture):
-			semantic_output,x_output,y_output,z_output=model(input_tensor)
+			semantic_output=model(input_tensor)
 		semantic_pred = get_semantic_segmentation(semantic_output[:1,:,:,:])
 
 
 		if args.if_KNN==2:
-			proj_unfold_range,proj_unfold_pre=NN_filter(torch.squeeze(range_img).detach(),torch.squeeze(FF.to_tensor(np.reshape(A.unproj_range,(1,-1)))).detach(), torch.squeeze(semantic_pred).detach(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_x,(1,-1)))).to(dtype=torch.long).detach(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_y,(1,-1)))).to(dtype=torch.long).detach())
+			t_1=torch.squeeze(range_img*80.0).detach().to(device)
+			t_3=torch.squeeze(semantic_pred).detach().to(device)
+			
+			proj_unfold_range,proj_unfold_pre=NN_filter(t_1,t_3)
+			
 			semantic_pred=np.squeeze(semantic_pred.detach().cpu().numpy())
 			proj_unfold_range=proj_unfold_range.cpu().numpy()
 			proj_unfold_pre=proj_unfold_pre.cpu().numpy()
@@ -195,7 +196,7 @@ for seq_name in all_seq_list:
 
 		if args.if_KNN==1:
 
-			unproj_argmax = post_knn(torch.squeeze(range_img).detach().cpu(),torch.squeeze(FF.to_tensor(np.reshape(A.unproj_range,(1,-1)))).detach().cpu(), torch.squeeze(semantic_pred).detach().cpu(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_x,(1,-1)))).to(dtype=torch.long).detach().cpu(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_y,(1,-1)))).to(dtype=torch.long).detach().cpu())
+			unproj_argmax = post_knn(torch.squeeze(range_img*80.0).detach().cpu(),torch.squeeze(FF.to_tensor(np.reshape(A.unproj_range,(1,-1)))).detach().cpu(), torch.squeeze(semantic_pred).detach().cpu(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_x,(1,-1)))).to(dtype=torch.long).detach().cpu(), torch.squeeze(FF.to_tensor(np.reshape(A.proj_y,(1,-1)))).to(dtype=torch.long).detach().cpu())
 			
 			label=[]
 			for i in unproj_argmax:

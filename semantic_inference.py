@@ -32,7 +32,7 @@ parser.add_argument('--range_x', dest= "range_x", default=2048, help="2048")
 
 
 # network settings
-parser.add_argument('--backbone', dest= "backbone", default="ResNet34_aspp_1", help="ResNet18 or ResNet18_aspp or ResNet34_aspp or ResNet34_aspp_NN or ResNet34_aspp_1")
+parser.add_argument('--backbone', dest= "backbone", default="ResNet34_point", help="ResNet34_aspp_1,ResNet34_aspp_2,ResNet_34_point")
 parser.add_argument('--batch_size', dest= "batch_size", default=2, help="bs")
 parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in the backbone net")
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
@@ -43,7 +43,7 @@ parser.add_argument('--if_perturb', dest= "if_perturb", default=False, help="if 
 
 
 # training settins
-parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=30,help="0 or from the beginning, or from the middle")
+parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=22,help="0 or from the beginning, or from the middle")
 parser.add_argument('--lr_policy',  dest= "lr_policy", default=1,help="lr_policy: 1, 2")
 parser.add_argument('--weight_WCE',  dest= "weight_WCE", default=1.0,help="weight_WCE")
 parser.add_argument('--weight_LS',  dest= "weight_LS", default=3.0,help="weight_LS")
@@ -52,7 +52,7 @@ parser.add_argument('--BN_train',  dest= "BN_train", default=True,help="if BN_tr
 parser.add_argument('--if_mixture',  dest= "if_mixture", default=True,help="if_mixture training")
 
 
-
+#0.580
 parser.add_argument('--if_KNN',  dest= "if_KNN", default=2,help="0: no post; 1: original_knn; 2: our post")
 
 
@@ -72,22 +72,19 @@ temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(ar
 save_path=save_path+temp_path+"/"
 
 
-if args.backbone=="ResNet18":
-	Backend=resnet18(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
-
-if args.backbone=="ResNet18_aspp":
-	Backend=resnet18_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
-
-if args.backbone=="ResNet34_aspp":
-	Backend=resnet34_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
-
 if args.backbone=="ResNet34_aspp_1":
 	Backend=resnet34_aspp_1(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1152)
+
+if args.backbone=="ResNet34_aspp_2":
+	Backend=resnet34_aspp_2(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,128*13)
 
 
+if args.backbone=="ResNet34_point":
+	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1024)
 
-
-S_H=SemanticHead(20,1152)
 
 
 model=Final_Model(Backend,S_H)
@@ -132,6 +129,13 @@ save_path_for_prediction="./method_predictions/sequences/08/predictions/"
 if not os.path.exists(save_path_for_prediction):
 	os.mkdir(save_path_for_prediction)
 
+
+scale_x=np.expand_dims(np.ones([args.range_y, args.range_x])*50.0,axis=-1).astype(np.float32)
+scale_y=np.expand_dims(np.ones([args.range_y, args.range_x])*50.0,axis=-1).astype(np.float32)
+scale_z=np.expand_dims(np.ones([args.range_y, args.range_x])*3.0,axis=-1).astype(np.float32)
+scale_matrx=np.concatenate([scale_x,scale_y,scale_z],axis=2)
+
+
 for i in range(len(lidar_list)):
 	if i%100==0:
 		print (i)
@@ -142,12 +146,12 @@ for i in range(len(lidar_list)):
 	A.open_scan(lidar_list[i])
 
 	#xyz = torch.unsqueeze(FF.to_tensor(np.expand_dims(A.proj_mask,axis=-1)*(A.proj_xyz-xyz_mean)/xyz_std),axis=0)
-	xyz = torch.unsqueeze(FF.to_tensor(A.proj_xyz),axis=0)
+	xyz = torch.unsqueeze(FF.to_tensor(A.proj_xyz/scale_matrx),axis=0)
 
 	#remission = torch.unsqueeze(FF.to_tensor(A.proj_mask*(A.proj_remission-remission_mean)/remission_std),axis=0)
 	remission = torch.unsqueeze(FF.to_tensor(A.proj_remission),axis=0)
 
-	range_img = torch.unsqueeze(FF.to_tensor(A.proj_range),axis=0)
+	range_img = torch.unsqueeze(FF.to_tensor(A.proj_range/80.0),axis=0)
 		
 	if args.if_remission and not args.if_range:
 		input_tensor=torch.cat([xyz,remission],axis=1)
@@ -164,7 +168,7 @@ for i in range(len(lidar_list)):
 	semantic_pred = get_semantic_segmentation(semantic_output[:1,:,:,:])
 
 	if args.if_KNN==2:
-		t_1=torch.squeeze(range_img).detach().to(device)
+		t_1=torch.squeeze(range_img*80.0).detach().to(device)
 		#t_2=torch.squeeze(FF.to_tensor(np.reshape(A.unproj_range,(1,-1)))).detach().to(device)
 		t_3=torch.squeeze(semantic_pred).detach().to(device)
 		#t_4=torch.squeeze(FF.to_tensor(np.reshape(A.proj_x,(1,-1)))).to(dtype=torch.long).detach().to(device)
@@ -194,7 +198,7 @@ for i in range(len(lidar_list)):
 		    label.append(label_each)
 
 	if args.if_KNN==1:
-		t_1=torch.squeeze(range_img).detach().to(device)
+		t_1=torch.squeeze(range_img*80.0).detach().to(device)
 		t_2=torch.squeeze(FF.to_tensor(np.reshape(A.unproj_range,(1,-1)))).detach().to(device)
 		t_3=torch.squeeze(semantic_pred).detach().to(device)
 		t_4=torch.squeeze(FF.to_tensor(np.reshape(A.proj_x,(1,-1)))).to(dtype=torch.long).detach().to(device)

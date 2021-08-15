@@ -82,7 +82,7 @@ class Dataset_semanticKITTI(data.Dataset):
 		dataset_dict = {}
 		#dataset_dict['xyz'] = F.to_tensor(np.expand_dims(self.A.proj_mask,axis=-1)*(self.A.proj_xyz-self.xyz_mean)/self.xyz_std)
 		if self.if_perturb:
-			single_random_matrix=0.97+0.06*np.random.rand(self.range_h,self.range_w).astype(np.float32)
+			single_random_matrix=0.98+0.04*np.random.rand(self.range_h,self.range_w).astype(np.float32)
 			multi_random_matrix=np.tile(np.expand_dims(single_random_matrix,axis=-1),[1,1,3]).astype(np.float32)
 			dataset_dict['xyz'] = self.A.proj_xyz*multi_random_matrix
 			dataset_dict['remission'] = self.A.proj_remission*single_random_matrix
@@ -94,7 +94,7 @@ class Dataset_semanticKITTI(data.Dataset):
 			dataset_dict['range_img'] = self.A.proj_range
 		
 		if self.if_range_mask:
-			range_mask=self.A.proj_range/80.0
+			range_mask=(self.A.proj_range)/100.0
 			dataset_dict['xyz_mask'] = self.A.proj_mask*range_mask
 			range_mask=None
 		else:
@@ -126,16 +126,30 @@ class Dataset_semanticKITTI(data.Dataset):
 
 	def prepare_input_label_semantic(self,sample):
 
+		scale_x=np.expand_dims(np.ones([self.range_h, self.range_w])*50.0,axis=-1).astype(np.float32)
+		scale_y=np.expand_dims(np.ones([self.range_h, self.range_w])*50.0,axis=-1).astype(np.float32)
+		scale_z=np.expand_dims(np.ones([self.range_h, self.range_w])*3.0,axis=-1).astype(np.float32)
+		scale_matrx=np.concatenate([scale_x,scale_y,scale_z],axis=2)
 		if self.if_remission and not self.if_range:
-			each_input=[sample['xyz'],np.expand_dims(sample['remission'],axis=-1)]
+			each_input=[sample['xyz']/scale_matrx,np.expand_dims(sample['remission'],axis=-1)]
 			input_tensor=np.concatenate(each_input,axis=-1)
 		if self.if_remission and self.if_range:
-			each_input=[sample['xyz'],np.expand_dims(sample['remission'],axis=-1),np.expand_dims(sample['range_img'],axis=-1)]
+			each_input=[sample['xyz']/scale_matrx,np.expand_dims(sample['remission'],axis=-1),np.expand_dims(sample['range_img']/80.0,axis=-1)]
 			input_tensor=np.concatenate(each_input,axis=-1)
 		if not self.if_remission and not self.if_range:
-			input_tensor=sample['xyz']
+			input_tensor=sample['xyz']/scale_matrx
 		semantic_label=sample['semantic_label'][:,:]
 		semantic_label_mask=sample['xyz_mask'][:,:]
+
+		'''
+		random_mask=np.random.randint(20, size=(self.range_h, self.range_w))
+		random_mask=random_mask<18
+		semantic_label=semantic_label*random_mask
+		_,_,n_channel=np.shape(input_tensor)
+		random_mask=np.expand_dims(random_mask,axis=-1)
+		random_mask=np.tile(random_mask,[1,1,n_channel])
+		input_tensor=input_tensor*random_mask
+		'''
 		return input_tensor,semantic_label,semantic_label_mask
 
 	def sample_transform(self,dataset_dict,split_point):

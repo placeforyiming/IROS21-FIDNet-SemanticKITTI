@@ -89,68 +89,37 @@ def get_semantic_segmentation(sem):
 
 
 
-class warmupLR(toptim._LRScheduler):
-    """ Warmup learning rate scheduler.
-        Initially, increases the learning rate from 0 to the final value, in a
-        certain number of steps. After this number of steps, each step decreases
-        LR exponentially.
-    """
 
-    def __init__(self, optimizer, lr, warmup_steps, momentum, decay):
-        # cyclic params
-        self.optimizer = optimizer
-        self.lr = lr
-        self.warmup_steps = warmup_steps
-        self.momentum = momentum
-        self.decay = decay
+def get_lr_manually_1(current_epoch):
+    current_epoch=int(current_epoch/2)
+    if current_epoch==0:
+        return 0.0004
+    if current_epoch==1:
+        return 0.0008
+    if current_epoch==2:
+        return 0.0012
+    if current_epoch==3:
+        return 0.0016
+    if current_epoch==4:
+        return 0.002
+    if current_epoch==5:
+        return 0.0018
+    if current_epoch==6:
+        return 0.0016
+    if current_epoch==7:
+        return 0.0014
+    if current_epoch==8:
+        return 0.0008
+    if current_epoch==9:
+        return 0.0012
+    if current_epoch==10:
+        return 0.0006
+    if current_epoch==11:
+        return 0.0008
+    if current_epoch>11:
+        return 0.0004
 
-        # cap to one
-        if self.warmup_steps < 1:
-            self.warmup_steps = 1
-
-        # cyclic lr
-        self.initial_scheduler = toptim.CyclicLR(self.optimizer,
-                                                 base_lr=0,
-                                                 max_lr=self.lr,
-                                                 step_size_up=self.warmup_steps,
-                                                 step_size_down=self.warmup_steps,
-                                                 cycle_momentum=False,
-                                                 base_momentum=self.momentum,
-                                                 max_momentum=self.momentum)
-
-        # our params
-        self.last_epoch = -1  # fix for pytorch 1.1 and below
-        self.finished = False  # am i done
-        super().__init__(optimizer)
-
-    def get_lr(self):
-        return [self.lr * (self.decay ** self.last_epoch) for lr in self.base_lrs]
-
-    def step(self, epoch=None):
-        if self.finished or self.initial_scheduler.last_epoch >= self.warmup_steps:
-            if not self.finished:
-                self.base_lrs = [self.lr for lr in self.base_lrs]
-                self.finished = True
-            return super(warmupLR, self).step(epoch)
-        else:
-            return self.initial_scheduler.step(epoch)
-
-def get_lr_manually(current_epoch):
-	current_epoch=current_epoch
-	if current_epoch<5:
-		return 0.0004*(1.0-current_epoch/5.0)
-	elif current_epoch<15:
-		return 0.0001*(1.0-(current_epoch-1)/30)
-	elif current_epoch<30:
-		return 0.0001*(1.0-(current_epoch-5)/30+0.25)
-	elif current_epoch<50:
-		return 0.0001*(1.0-(current_epoch-1)/60+0.15)
-	elif current_epoch<70:
-		return 0.00002
-	elif current_epoch<100:
-		return 0.00001
-
-
+'''
 def get_lr_manually_1(current_epoch):
 	current_epoch=int(current_epoch/2)
 	if current_epoch==0:
@@ -183,39 +152,11 @@ def get_lr_manually_1(current_epoch):
 		return 0.0004
 	if current_epoch==14:
 		return 0.0002
-	if current_epoch>14:
+	if current_epoch==15:    
 		return 0.0001
+'''
 
-def get_lr_manually_2(current_epoch):
-	current_epoch=int(current_epoch/2)
-	if current_epoch==0:
-		return 0.0004
-	if current_epoch==1:
-		return 0.0008
-	if current_epoch==2:
-		return 0.001
-	if current_epoch==3:
-		return 0.0012
-	if current_epoch==4:
-		return 0.0014
-	if current_epoch==5:
-		return 0.0016
-	if current_epoch==6:
-		return 0.0014
-	if current_epoch==7:
-		return 0.0012
-	if current_epoch==8:
-		return 0.001
-	if current_epoch==9:
-		return 0.0008
-	if current_epoch==10:
-		return 0.0006
-	if current_epoch==11:
-		return 0.0004
-	if current_epoch==12:
-		return 0.0002
-	if current_epoch>12:
-		return 0.0001
+
 
 
 def prepare_input_label_semantic(sample,if_remission=False, if_range=False):
@@ -237,34 +178,6 @@ def prepare_input_label_semantic(sample,if_remission=False, if_range=False):
     return input_tensor,semantic_label,semantic_label_mask
 
 
-def prepare_input_label_panoptic(sample,if_remission=False, if_range=False):
-    data_num=len(sample)
-    input_tensor=[]
-    semantic_label=[]
-    semantic_label_mask=[]
-    x_bin_label=[]
-    y_bin_label=[]
-    z_bin_label=[]
-    instance_mask=[]
-    for i in range(data_num):
-        if if_remission and not if_range:
-            each_input=[sample[i]['xyz'],sample[i]['remission']]
-            input_tensor.append(torch.cat(each_input,axis=0))
-        if if_remission and if_range:
-            each_input=[sample[i]['xyz'],sample[i]['remission'],sample[i]['range_img']]
-            input_tensor.append(torch.cat(each_input,axis=0))
-        if not if_remission and not if_range:
-            input_tensor.append(sample[i]['xyz'])
-        semantic_label.append(sample[i]['semantic_label'][0,:,:])
-        semantic_label_mask.append(sample[i]['xyz_mask'][0,:,:])
-
-        x_bin_label.append(sample[i]['x_label'][0,:,:])
-        y_bin_label.append(sample[i]['y_label'][0,:,:])
-        z_bin_label.append(sample[i]['z_label'][0,:,:])
-
-        instance_mask.append(sample[i]['instance_bin_mask'][0,:,:])
-
-    return input_tensor,semantic_label,semantic_label_mask,x_bin_label,y_bin_label,z_bin_label,instance_mask
 
 
 def isnan(x):

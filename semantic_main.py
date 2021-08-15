@@ -35,7 +35,7 @@ parser.add_argument('--if_perturb', dest= "if_perturb", default=False, help="if 
 
 
 # network settings
-parser.add_argument('--backbone', dest= "backbone", default="ResNet34_aspp_1", help="ResNet18 or ResNet18_aspp or ResNet34_aspp or ResNet34_aspp_NN or ResNet34_aspp_1")
+parser.add_argument('--backbone', dest= "backbone", default="ResNet34_point", help="ResNet34_aspp_1,ResNet34_aspp_2,ResNet_34_point")
 parser.add_argument('--batch_size', dest= "batch_size", default=2, help="bs")
 parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in the backbone net")
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
@@ -46,7 +46,7 @@ parser.add_argument('--if_range', dest= "if_range", default=True, help="if conca
 # training settins
 parser.add_argument('--start_epoch',  dest= "start_epoch", default=0,help="0 or from the beginning, or from the middle")
 parser.add_argument('--lr_policy',  dest= "lr_policy", default=1,help="lr_policy: 1, 2")
-parser.add_argument('--total_epoch',  dest= "total_epoch", default=31,help="total_epoch")
+parser.add_argument('--total_epoch',  dest= "total_epoch", default=25,help="total_epoch")
 parser.add_argument('--weight_WCE',  dest= "weight_WCE", default=1.0,help="weight_WCE")
 parser.add_argument('--weight_LS',  dest= "weight_LS", default=3.0,help="weight_LS")
 parser.add_argument('--top_k_percent_pixels',  dest= "top_k_percent_pixels", default=0.15,help="top_k_percent_pixels, hard mining")
@@ -94,23 +94,21 @@ data_loader_train = torch.utils.data.DataLoader(dataset_train,batch_size=args.ba
 
 print(len(data_loader_train))
 
-if args.backbone=="ResNet18":
-	Backend=resnet18(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
-if args.backbone=="ResNet18_aspp":
-	Backend=resnet18_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
-if args.backbone=="ResNet34_aspp":
-	Backend=resnet34_aspp(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
-
-if args.backbone=="ResNet34_aspp_NN":
-	Backend=resnet34_aspp_NN(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
 
 if args.backbone=="ResNet34_aspp_1":
 	Backend=resnet34_aspp_1(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1152)
 
-S_H=SemanticHead(20,1152)
+if args.backbone=="ResNet34_aspp_2":
+	Backend=resnet34_aspp_2(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,128*13)
 
+
+if args.backbone=="ResNet34_point":
+	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	S_H=SemanticHead(20,1024)
 
 model=Final_Model(Backend,S_H)
 
@@ -125,7 +123,10 @@ else:
 
 
 if args.start_epoch>0:
-	model.module.load_state_dict(torch.load(save_path+str(args.start_epoch-1)))
+	if args.if_multi_gpus:
+		model.module.load_state_dict(torch.load(save_path+str(args.start_epoch-1)))
+	else:
+		model.load_state_dict(torch.load(save_path+str(args.start_epoch-1)))
 	
 
 weight=CE_Weight.get_weight()
@@ -141,7 +142,10 @@ else:
 	model.eval()
 
 
+
 optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001,weight_decay=0.001)
+
+
 
 scaler = torch.cuda.amp.GradScaler()
 
@@ -195,7 +199,8 @@ for current_epoch in range(args.start_epoch,args.total_epoch):
 		#total_loss.backward()
 		#optimizer.step()
 		
-			
+		if batch_ndx%100==0 and batch_ndx>0:
+			print (loss_per_epoch/batch_ndx)	
 		if batch_ndx%1000==0 and batch_ndx>0:
 			print ("average loss for epoch "+str(current_epoch))
 			print (loss_per_epoch/batch_ndx)

@@ -1,7 +1,3 @@
-# ------------------------------------------------------------------------------
-# Reference: https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-# Modified by Bowen Cheng (bcheng9@illinois.edu)
-# ------------------------------------------------------------------------------
 
 import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
@@ -44,114 +40,6 @@ class Final_Model(nn.Module):
       
         return semantic_output
 
-class SemanticHead(nn.Module):
-
-    def __init__(self,num_class=20,input_channel=1024):
-        super(SemanticHead,self).__init__()
-  
-        self.conv_1=nn.Conv2d(input_channel, 256, 1)
-        self.bn1 = nn.BatchNorm2d(256)
-        self.relu_1 = nn.LeakyReLU()
-
-        self.conv_2=nn.Conv2d(256, 128, 1)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.relu_2 = nn.LeakyReLU()
-
-        self.semantic_output=nn.Conv2d(128, num_class, 1)
-
-    def forward(self, input_tensor):
-        res=self.conv_1(input_tensor)
-        res=self.bn1(res)
-        res=self.relu_1(res)
-        
-        res=self.conv_2(res)
-        res=self.bn2(res)
-        res=self.relu_2(res)
-        
-        res=self.semantic_output(res)
-        return res
-
-class x_Head(nn.Module):
-
-    def __init__(self,num_class=20,input_channel=1024):
-        super(x_Head,self).__init__()
-        
-        self.conv_1=nn.Conv2d(input_channel, 256, 1)
-        self.bn1 = nn.BatchNorm2d(256)
-        self.relu_1 = nn.LeakyReLU()
-
-        self.conv_2=nn.Conv2d(256, 128, 1)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.relu_2 = nn.LeakyReLU()
-
-        self.semantic_output=nn.Conv2d(128, num_class, 1)
-
-    def forward(self, input_tensor):
-        res=self.conv_1(input_tensor)
-        res=self.bn1(res)
-        res=self.relu_1(res)
-        
-        res=self.conv_2(res)
-        res=self.bn2(res)
-        res=self.relu_2(res)
-
-        res=self.semantic_output(res)
-        return res
-
-class y_Head(nn.Module):
-
-    def __init__(self,num_class=20,input_channel=1024):
-        super(y_Head,self).__init__()
-  
-        self.conv_1=nn.Conv2d(input_channel, 256, 1)
-        self.bn1 = nn.BatchNorm2d(256)
-        self.relu_1 = nn.LeakyReLU()
-
-        self.conv_2=nn.Conv2d(256, 128, 1)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.relu_2 = nn.LeakyReLU()
-
-        self.semantic_output=nn.Conv2d(128, num_class, 1)
-
-    def forward(self, input_tensor):
-        res=self.conv_1(input_tensor)
-        res=self.bn1(res)
-        res=self.relu_1(res)
-
-        res=self.conv_2(res)
-        res=self.bn2(res)
-        res=self.relu_2(res)
-
-        res=self.semantic_output(res)
-        return res
-
-
-class z_Head(nn.Module):
-
-    def __init__(self,num_class=20,input_channel=1024):
-        super(z_Head,self).__init__()
-  
-        self.conv_1=nn.Conv2d(input_channel, 256, 1)
-        self.bn1 = nn.BatchNorm2d(256)
-        self.relu_1 = nn.LeakyReLU()
-
-        self.conv_2=nn.Conv2d(256, 128, 1)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.relu_2 = nn.LeakyReLU()
-
-        self.semantic_output=nn.Conv2d(128, num_class, 1)
-
-    def forward(self, input_tensor):
-        res=self.conv_1(input_tensor)
-        res=self.bn1(res)
-        res=self.relu_1(res)
-
-        res=self.conv_2(res)
-        res=self.bn2(res)
-        res=self.relu_2(res)
-
-        res=self.semantic_output(res)
-        return res
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -254,403 +142,32 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet(nn.Module):
+class SemanticHead(nn.Module):
 
-    def __init__(self, block, layers,if_BN,if_remission, zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
-        super(ResNet, self).__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        self._norm_layer = norm_layer
-        self.if_BN=if_BN
-        self.if_remission=if_remission
-
-        self.inplanes = 64
-        self.dilation = 1
-   
-        self.groups = groups
-        self.base_width = width_per_group
-        if self.if_remission:
-            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
-
-        else:        
-            self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,bias=True)
-
-        #self.conv2 = nn.Conv2d(16, 64, kernel_size=1, stride=1, padding=0,bias=True)
-
-
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        # self.fc = nn.Linear(512 * block.expansion, num_classes)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
-
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
-        norm_layer = self._norm_layer
-        downsample = None
-        previous_dilation = self.dilation
-        if dilate:
-            self.dilation *= stride
-            stride = 1
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            if self.if_BN:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
-                norm_layer(planes * block.expansion),
-                )
-            else:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride)
-                )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, if_BN=self.if_BN))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups,
-                                base_width=self.base_width, dilation=self.dilation,
-                                if_BN=self.if_BN))
-
-        return nn.Sequential(*layers)
-
-    def _forward_impl(self, x):
-        outputs = {}
-        # See note [TorchScript super()]
-        x = self.conv1(x)
-        #x = self.conv2(x)
-       
-        x_1 = self.layer1(x)  # 1
-        x_2 = self.layer2(x_1)  # 1/2
-        x_3 = self.layer3(x_2)  # 1/4
-        x_4 = self.layer4(x_3)  # 1/8
-
-        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_2 = F.interpolate(x_2, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_3 = F.interpolate(x_3, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_4 = F.interpolate(x_4, size=x.size()[2:], mode='bilinear', align_corners=True)
-        
-        '''
-        outputs['stem'] = x
-        outputs['res2'] = res_1
-        outputs['res3'] = res_2
-        outputs['res4'] = res_3
-        outputs['res5'] = res_4
-        '''
-        res=[x,res_1,res_2,res_3,res_4]
-        return torch.cat(res, dim=1)
-
-    def forward(self, x):
-        return self._forward_impl(x)
-
-
-
-class ResNet_ASPP(nn.Module):
-
-    def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
-        super(ResNet_ASPP, self).__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        self._norm_layer = norm_layer
-        self.if_BN=if_BN
-        self.if_remission=if_remission
-        self.if_range=if_range
-
-        self.inplanes = 128
-        self.dilation = 1
-   
-        self.groups = groups
-        self.base_width = width_per_group
-
-        if self.if_remission and not self.if_range:
-            self.conv1 = nn.Conv2d(4, 128, kernel_size=1, stride=1, padding=0,bias=True)
-        if self.if_range and self.if_range:
-            self.conv1 = nn.Conv2d(5, 128, kernel_size=1, stride=1, padding=0,bias=True)
-        if not self.if_remission and not self.if_range:        
-            self.conv1 = nn.Conv2d(3, 128, kernel_size=1, stride=1, padding=0,bias=True)
-
-
-        self.conv_aspp_1=nn.Conv2d(128, 32, 3, padding=3, dilation=3, bias=False)
-        self.conv_aspp_2=nn.Conv2d(128, 32, 3, padding=6, dilation=6, bias=False)
-        self.conv_aspp_3=nn.Conv2d(128, 32, 3, padding=9, dilation=9, bias=False)
-        self.conv2 = nn.Conv2d(160+64, 128, kernel_size=1, stride=1, padding=0,bias=False)
-        self.bn = nn.BatchNorm2d(128)
-        self.relu = nn.LeakyReLU()
-        
-
-        self.layer1 = self._make_layer(block, 128, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
-
-        self.conv_Aspp_1=nn.Conv2d(768, 128, 3, padding=3, dilation=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(128)
+    def __init__(self,num_class=20,input_channel=1024):
+        super(SemanticHead,self).__init__()
+  
+        self.conv_1=nn.Conv2d(input_channel, 512, 1)
+        self.bn1 = nn.BatchNorm2d(512)
         self.relu_1 = nn.LeakyReLU()
-        self.conv_Aspp_2=nn.Conv2d(768, 128, 3, padding=6, dilation=6, bias=False)
+
+        self.conv_2=nn.Conv2d(512, 128, 1)
         self.bn2 = nn.BatchNorm2d(128)
         self.relu_2 = nn.LeakyReLU()
+
+        self.semantic_output=nn.Conv2d(128, num_class, 1)
+
+    def forward(self, input_tensor):
+        res=self.conv_1(input_tensor)
+        res=self.bn1(res)
+        res=self.relu_1(res)
         
-        self.conv_Aspp_3=nn.Conv2d(768, 128, 3, padding=9, dilation=9, bias=False)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.relu_3 = nn.LeakyReLU()
+        res=self.conv_2(res)
+        res=self.bn2(res)
+        res=self.relu_2(res)
         
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        # self.fc = nn.Linear(512 * block.expansion, num_classes)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
-
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
-        norm_layer = self._norm_layer
-        downsample = None
-        previous_dilation = self.dilation
-        if dilate:
-            self.dilation *= stride
-            stride = 1
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            if self.if_BN:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
-                norm_layer(planes * block.expansion),
-                )
-            else:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride)
-                )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, if_BN=self.if_BN))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups,
-                                base_width=self.base_width, dilation=self.dilation,
-                                if_BN=self.if_BN))
-
-        return nn.Sequential(*layers)
-
-    def _forward_impl(self, x):
-        outputs = {}
-        # See note [TorchScript super()]
-        x = self.conv1(x)
-
-        x_aspp_1=self.conv_aspp_1(x)
-        x_aspp_2=self.conv_aspp_2(x)
-        x_aspp_3=self.conv_aspp_3(x)
-        x=torch.cat([x,x_aspp_1,x_aspp_2,x_aspp_3], dim=1)
-        x = self.conv2(x)
-        x = self.bn(x)
-        x = self.relu(x)
-       
-        x_1 = self.layer1(x)  # 1
-        x_2 = self.layer2(x_1)  # 1/2
-        x_3 = self.layer3(x_2)  # 1/4
-        x_4 = self.layer4(x_3)  # 1/8
-
-        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_2 = F.interpolate(x_2, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_3 = F.interpolate(x_3, size=x.size()[2:], mode='bilinear', align_corners=True)
-        res_4 = F.interpolate(x_4, size=x.size()[2:], mode='bilinear', align_corners=True)
-        
-        '''
-        outputs['stem'] = x
-        outputs['res2'] = res_1
-        outputs['res3'] = res_2
-        outputs['res4'] = res_3
-        outputs['res5'] = res_4
-        '''
-        res=[x,res_1,res_2,res_3,res_4]
-        res=torch.cat(res, dim=1)
-        res_1_1=self.conv_Aspp_1(res)
-        res_1_1=self.bn1(res_1_1)
-        res_1_1=self.relu_1(res_1_1)
-        res_2_2=self.conv_Aspp_2(res)
-        res_2_2=self.bn2(res_2_2)
-        res_2_2=self.relu_2(res_2_2)
-        res_3_3=self.conv_Aspp_3(res)
-        res_3_3=self.bn3(res_3_3)
-        res_3_3=self.relu_3(res_3_3)
-        res_new=[res,res_1_1,res_2_2,res_3_3]
-        return torch.cat(res_new, dim=1)
-
-    def forward(self, x):
-        return self._forward_impl(x)
-
-class ResNet_ASPP_NN(nn.Module):
-
-    def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
-        super(ResNet_ASPP_NN, self).__init__()
-        if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
-        self._norm_layer = norm_layer
-        self.if_BN=if_BN
-        self.if_remission=if_remission
-        self.if_range=if_range
-
-        self.inplanes = 128
-        self.dilation = 1
-   
-        self.groups = groups
-        self.base_width = width_per_group
-
-        if self.if_remission and not self.if_range:
-            self.conv1 = nn.Conv2d(4, 128, kernel_size=1, stride=1, padding=0,bias=True)
-        if self.if_range and self.if_range:
-            self.conv1 = nn.Conv2d(5, 128, kernel_size=1, stride=1, padding=0,bias=True)
-        if not self.if_remission and not self.if_range:        
-            self.conv1 = nn.Conv2d(3, 128, kernel_size=1, stride=1, padding=0,bias=True)
-
-
-        self.conv_aspp_1=nn.Conv2d(128, 32, 3, padding=3, dilation=3, bias=False)
-        self.conv_aspp_2=nn.Conv2d(128, 32, 3, padding=6, dilation=6, bias=False)
-        self.conv_aspp_3=nn.Conv2d(128, 32, 3, padding=9, dilation=9, bias=False)
-        self.conv2 = nn.Conv2d(160+64, 128, kernel_size=1, stride=1, padding=0,bias=False)
-        self.bn = nn.BatchNorm2d(128)
-        self.relu = nn.LeakyReLU()
-        
-
-        self.layer1 = self._make_layer(block, 128, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
-
-        self.conv_Aspp_1=nn.Conv2d(768, 128, 3, padding=3, dilation=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(128)
-        self.relu_1 = nn.LeakyReLU()
-        self.conv_Aspp_2=nn.Conv2d(768, 128, 3, padding=6, dilation=6, bias=False)
-        self.bn2 = nn.BatchNorm2d(128)
-        self.relu_2 = nn.LeakyReLU()
-        
-        self.conv_Aspp_3=nn.Conv2d(768, 128, 3, padding=9, dilation=9, bias=False)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.relu_3 = nn.LeakyReLU()
-        
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        # self.fc = nn.Linear(512 * block.expansion, num_classes)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
-
-    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
-        norm_layer = self._norm_layer
-        downsample = None
-        previous_dilation = self.dilation
-        if dilate:
-            self.dilation *= stride
-            stride = 1
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            if self.if_BN:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride),
-                norm_layer(planes * block.expansion),
-                )
-            else:
-                downsample = nn.Sequential(
-                conv1x1(self.inplanes, planes * block.expansion, stride)
-                )
-
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
-                            self.base_width, previous_dilation, if_BN=self.if_BN))
-        self.inplanes = planes * block.expansion
-        for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=self.groups,
-                                base_width=self.base_width, dilation=self.dilation,
-                                if_BN=self.if_BN))
-
-        return nn.Sequential(*layers)
-
-    def _forward_impl(self, x):
-        outputs = {}
-        # See note [TorchScript super()]
-        x = self.conv1(x)
-
-        x_aspp_1=self.conv_aspp_1(x)
-        x_aspp_2=self.conv_aspp_2(x)
-        x_aspp_3=self.conv_aspp_3(x)
-        x=torch.cat([x,x_aspp_1,x_aspp_2,x_aspp_3], dim=1)
-        x = self.conv2(x)
-        x = self.bn(x)
-        x = self.relu(x)
-       
-        x_1 = self.layer1(x)  # 1
-        x_2 = self.layer2(x_1)  # 1/2
-        x_3 = self.layer3(x_2)  # 1/4
-        x_4 = self.layer4(x_3)  # 1/8
-
-        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='nearest')
-        res_2 = F.interpolate(x_2, size=x.size()[2:], mode='nearest')
-        res_3 = F.interpolate(x_3, size=x.size()[2:], mode='nearest')
-        res_4 = F.interpolate(x_4, size=x.size()[2:], mode='nearest')
-        
-        '''
-        outputs['stem'] = x
-        outputs['res2'] = res_1
-        outputs['res3'] = res_2
-        outputs['res4'] = res_3
-        outputs['res5'] = res_4
-        '''
-        res=[x,res_1,res_2,res_3,res_4]
-        res=torch.cat(res, dim=1)
-        res_1_1=self.conv_Aspp_1(res)
-        res_1_1=self.bn1(res_1_1)
-        res_1_1=self.relu_1(res_1_1)
-        res_2_2=self.conv_Aspp_2(res)
-        res_2_2=self.bn2(res_2_2)
-        res_2_2=self.relu_2(res_2_2)
-        res_3_3=self.conv_Aspp_3(res)
-        res_3_3=self.bn3(res_3_3)
-        res_3_3=self.relu_3(res_3_3)
-        res_new=[res,res_1_1,res_2_2,res_3_3]
-        return torch.cat(res_new, dim=1)
-
-    def forward(self, x):
-        return self._forward_impl(x)
+        res=self.semantic_output(res)
+        return res
 
 class ResNet_ASPP_1(nn.Module):
 
@@ -792,6 +309,279 @@ class ResNet_ASPP_1(nn.Module):
 
 
 
+class ResNet_ASPP_2(nn.Module):
+
+    def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
+        super(ResNet_ASPP_2, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        self._norm_layer = norm_layer
+        self.if_BN=if_BN
+        self.if_remission=if_remission
+        self.if_range=if_range
+
+        self.inplanes = 128
+        self.dilation = 1
+   
+        self.groups = groups
+        self.base_width = width_per_group
+
+        if self.if_remission and not self.if_range:
+            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
+        if self.if_range and self.if_range:
+            self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
+        if not self.if_remission and not self.if_range:        
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,bias=True)
+
+
+   
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0,bias=True)
+        self.bn = nn.BatchNorm2d(128)
+        self.relu = nn.LeakyReLU()
+        
+
+        self.layer1 = self._make_layer(block, 128, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 256, layers[3], stride=2)
+
+        self.conv_Aspp_1=nn.Conv2d(128*7, 256, 3, padding=3, dilation=3, bias=True)
+        self.bn1 = nn.BatchNorm2d(256)
+        self.relu_1 = nn.LeakyReLU()
+        self.conv_Aspp_2=nn.Conv2d(128*7, 256, 3, padding=6, dilation=6, bias=True)
+        self.bn2 = nn.BatchNorm2d(256)
+        self.relu_2 = nn.LeakyReLU()
+        
+        self.conv_Aspp_3=nn.Conv2d(128*7, 256, 3, padding=9, dilation=9, bias=True)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.relu_3 = nn.LeakyReLU()
+        
+        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        # self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
+                    nn.init.constant_(m.bn2.weight, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+        norm_layer = self._norm_layer
+        downsample = None
+        previous_dilation = self.dilation
+        if dilate:
+            self.dilation *= stride
+            stride = 1
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            if self.if_BN:
+                downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride),
+                norm_layer(planes * block.expansion),
+                )
+            else:
+                downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride)
+                )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
+                            self.base_width, previous_dilation, if_BN=self.if_BN))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes, groups=self.groups,
+                                base_width=self.base_width, dilation=self.dilation,
+                                if_BN=self.if_BN))
+
+        return nn.Sequential(*layers)
+
+    def _forward_impl(self, x):
+        outputs = {}
+        # See note [TorchScript super()]
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.bn(x)
+        x = self.relu(x)
+       
+        x_1 = self.layer1(x)  # 1
+        x_2 = self.layer2(x_1)  # 1/2
+        x_3 = self.layer3(x_2)  # 1/4
+        x_4 = self.layer4(x_3)  # 1/8
+
+        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_2 = F.interpolate(x_2, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_3 = F.interpolate(x_3, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_4 = F.interpolate(x_4, size=x.size()[2:], mode='bilinear', align_corners=True)
+        
+        '''
+        outputs['stem'] = x
+        outputs['res2'] = res_1
+        outputs['res3'] = res_2
+        outputs['res4'] = res_3
+        outputs['res5'] = res_4
+        '''
+        res=[x,res_1,res_2,res_3,res_4]
+        res=torch.cat(res, dim=1)
+        res_1_1=self.conv_Aspp_1(res)
+        res_1_1=self.bn1(res_1_1)
+        res_1_1=self.relu_1(res_1_1)
+        res_2_2=self.conv_Aspp_2(res)
+        res_2_2=self.bn2(res_2_2)
+        res_2_2=self.relu_2(res_2_2)
+        res_3_3=self.conv_Aspp_3(res)
+        res_3_3=self.bn3(res_3_3)
+        res_3_3=self.relu_3(res_3_3)
+        res_new=[res,res_1_1,res_2_2,res_3_3]
+        return torch.cat(res_new, dim=1)
+
+    def forward(self, x):
+        return self._forward_impl(x)
+
+
+
+
+class ResNet_34_point(nn.Module):
+
+    def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
+        super(ResNet_34_point, self).__init__()
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+        self._norm_layer = norm_layer
+        self.if_BN=if_BN
+        self.if_remission=if_remission
+        self.if_range=if_range
+
+        self.inplanes = 512
+        self.dilation = 1
+   
+        self.groups = groups
+        self.base_width = width_per_group
+
+        if self.if_remission and not self.if_range:
+            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
+        if self.if_range and self.if_range:
+            self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
+        if not self.if_remission and not self.if_range:        
+            self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,bias=True)
+
+
+   
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0,bias=True)
+        self.bn = nn.BatchNorm2d(128)
+        self.relu = nn.LeakyReLU()
+
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=1, stride=1, padding=0,bias=True)
+        self.bn_1 = nn.BatchNorm2d(256)
+        self.relu_1 = nn.LeakyReLU()
+
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=1, stride=1, padding=0,bias=True)
+        self.bn_2 = nn.BatchNorm2d(512)
+        self.relu_2 = nn.LeakyReLU()
+        
+
+        self.layer1 = self._make_layer(block, 128, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 128, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 128, layers[3], stride=2)
+
+        
+        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        # self.fc = nn.Linear(512 * block.expansion, num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
+                    nn.init.constant_(m.bn2.weight, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1, dilate=False):
+        norm_layer = self._norm_layer
+        downsample = None
+        previous_dilation = self.dilation
+        if dilate:
+            self.dilation *= stride
+            stride = 1
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            if self.if_BN:
+                downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride),
+                norm_layer(planes * block.expansion),
+                )
+            else:
+                downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride)
+                )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
+                            self.base_width, previous_dilation, if_BN=self.if_BN))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes, groups=self.groups,
+                                base_width=self.base_width, dilation=self.dilation,
+                                if_BN=self.if_BN))
+
+        return nn.Sequential(*layers)
+
+    def _forward_impl(self, x):
+        outputs = {}
+        # See note [TorchScript super()]
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.bn(x)
+        x = self.relu(x)
+
+        x = self.conv3(x)
+        x = self.bn_1(x)
+        x = self.relu_1(x)
+
+        x = self.conv4(x)
+        x = self.bn_2(x)
+        x = self.relu_2(x)
+       
+        x_1 = self.layer1(x)  # 1
+        x_2 = self.layer2(x_1)  # 1/2
+        x_3 = self.layer3(x_2)  # 1/4
+        x_4 = self.layer4(x_3)  # 1/8
+
+        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_2 = F.interpolate(x_2, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_3 = F.interpolate(x_3, size=x.size()[2:], mode='bilinear', align_corners=True)
+        res_4 = F.interpolate(x_4, size=x.size()[2:], mode='bilinear', align_corners=True)
+        
+        res=[x,res_1,res_2,res_3,res_4]
+
+        return torch.cat(res, dim=1)
+
+    def forward(self, x):
+        return self._forward_impl(x)
+
+
+
+
+
+
 
 def _resnet(arch, block, layers, if_BN,if_remission):
     model = ResNet(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
@@ -803,13 +593,20 @@ def _resnet_aspp(arch, block, layers, if_BN,if_remission,if_range):
 
     return model
 
-def _resnet_aspp_NN(arch, block, layers, if_BN,if_remission,if_range):
-    model = ResNet_ASPP_NN(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
 
-    return model
 
 def _resnet_aspp_1(arch, block, layers, if_BN,if_remission,if_range):
     model = ResNet_ASPP_1(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
+
+    return model
+
+def _resnet_aspp_2(arch, block, layers, if_BN,if_remission,if_range):
+    model = ResNet_ASPP_2(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
+
+    return model
+
+def _resnet_point(arch, block, layers, if_BN,if_remission,if_range):
+    model = ResNet_34_point(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
 
     return model
 
@@ -835,25 +632,6 @@ def resnet18_aspp(if_BN,if_remission,if_range):
 
 
 
-def resnet34_aspp(if_BN,if_remission,if_range):
-    """ResNet-34 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet_aspp('resnet34', BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
-
-def resnet34_aspp_NN(if_BN,if_remission,if_range):
-    """ResNet-34 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet_aspp_NN('resnet34', BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
-
-
 def resnet34_aspp_1(if_BN,if_remission,if_range):
     """ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
@@ -863,17 +641,25 @@ def resnet34_aspp_1(if_BN,if_remission,if_range):
     """
     return _resnet_aspp_1('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
 
-
-
-
-def resnet18_aspp_extra(if_BN,if_remission):
-    """ResNet-18 model from
+def resnet34_aspp_2(if_BN,if_remission,if_range):
+    """ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet_aspp_extra('resnet18', BasicBlock, [2, 2, 2, 2], if_BN,if_remission)
+    return _resnet_aspp_2('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
+
+def resnet34_point(if_BN,if_remission,if_range):
+    """ResNet-34 model from
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _resnet_point('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
+
+
 
 
 def resnet34(if_BN,if_remission):

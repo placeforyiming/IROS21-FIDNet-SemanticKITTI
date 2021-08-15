@@ -6,7 +6,7 @@ class LaserScan:
   """Class that contains LaserScan with x,y,z,r"""
   EXTENSIONS_SCAN = ['.bin']
 
-  def __init__(self, project=False, flip_sign=False,H=64, W=1024, fov_up=3.0, fov_down=-25.0):
+  def __init__(self, project=False, flip_sign=True,H=64, W=1024, fov_up=3.0, fov_down=-25.0):
     self.project = project
     self.proj_H = H
     self.proj_W = W
@@ -98,6 +98,8 @@ class LaserScan:
     if self.flip_sign:
         if random.random()<0.5:
             self.points[:, 1] = -self.points[:, 1]
+        if random.random()<0.5:
+            self.points[:, 0] = -self.points[:, 0]
     if remissions is not None:
       self.remissions = remissions  # get remission
     else:
