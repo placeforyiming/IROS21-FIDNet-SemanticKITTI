@@ -31,7 +31,6 @@ parser.add_argument('--code_mode', dest= "code_mode", default="train", help="tra
 # data_loader
 parser.add_argument('--if_aug', dest= "if_aug", default=True, help="if if_aug")
 parser.add_argument('--if_range_mask', dest= "if_range_mask", default=True, help="if if_range_mask")
-parser.add_argument('--if_perturb', dest= "if_perturb", default=False, help="if if_perturb")
 
 
 # network settings
@@ -40,13 +39,14 @@ parser.add_argument('--batch_size', dest= "batch_size", default=2, help="bs")
 parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in the backbone net")
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
 parser.add_argument('--if_range', dest= "if_range", default=True, help="if concatenate range in the input")
+parser.add_argument('--with_normal', dest= "with_normal", default=True, help="if concatenate normal in the input")
 
 
 
 # training settins
 parser.add_argument('--start_epoch',  dest= "start_epoch", default=0,help="0 or from the beginning, or from the middle")
 parser.add_argument('--lr_policy',  dest= "lr_policy", default=1,help="lr_policy: 1, 2")
-parser.add_argument('--total_epoch',  dest= "total_epoch", default=25,help="total_epoch")
+parser.add_argument('--total_epoch',  dest= "total_epoch", default=26,help="total_epoch")
 parser.add_argument('--weight_WCE',  dest= "weight_WCE", default=1.0,help="weight_WCE")
 parser.add_argument('--weight_LS',  dest= "weight_LS", default=3.0,help="weight_LS")
 parser.add_argument('--top_k_percent_pixels',  dest= "top_k_percent_pixels", default=0.15,help="top_k_percent_pixels, hard mining")
@@ -71,7 +71,7 @@ save_path="./save_semantic/"
 if not(os.path.exists(save_path)):
 	os.mkdir(save_path)
 
-temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(args.if_BN)+"_remission"+str(args.if_remission)+"_range"+str(args.if_range)+"_rangemask"+str(args.if_range_mask)+"_perturb"+str(args.if_perturb)+"_"+str(args.batch_size)+"_"+str(args.weight_WCE)+"_"+str(args.weight_LS)+"_lr"+str(args.lr_policy)+"_top_k"+str(args.top_k_percent_pixels)
+temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(args.if_BN)+"_remission"+str(args.if_remission)+"_range"+str(args.if_range)+"_normal"+str(args.with_normal)+"_rangemask"+str(args.if_range_mask)+"_"+str(args.batch_size)+"_"+str(args.weight_WCE)+"_"+str(args.weight_LS)+"_lr"+str(args.lr_policy)+"_top_k"+str(args.top_k_percent_pixels)
 
 save_path=save_path+temp_path+"/"
 if not(os.path.exists(save_path)):
@@ -79,7 +79,7 @@ if not(os.path.exists(save_path)):
 
 
 
-dataset_train=Dataset_semanticKITTI(root=args.root,split=args.code_mode,is_train=True, range_img_size=(args.range_y,args.range_x),if_aug=args.if_aug, if_range_mask=args.if_range_mask, if_perturb=args.if_perturb,if_remission=args.if_remission, if_range=args.if_range)
+dataset_train=Dataset_semanticKITTI(root=args.root,split=args.code_mode,is_train=True, range_img_size=(args.range_y,args.range_x),if_aug=args.if_aug, if_range_mask=args.if_range_mask,if_remission=args.if_remission, if_range=args.if_range, with_normal=args.with_normal)
 
 
 if args.if_multi_gpus:
@@ -107,7 +107,7 @@ if args.backbone=="ResNet34_aspp_2":
 
 
 if args.backbone=="ResNet34_point":
-	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range,with_normal=args.with_normal)
 	S_H=SemanticHead(20,1024)
 
 model=Final_Model(Backend,S_H)
@@ -143,7 +143,7 @@ else:
 
 
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001,weight_decay=0.001)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.0001,weight_decay=0.005)
 
 
 
@@ -195,7 +195,10 @@ for current_epoch in range(args.start_epoch,args.total_epoch):
 		if args.lr_policy==0:
 			scheduler.step()
 		scaler.update()
-
+		input_tensor=None
+		semantic_label=None
+		semantic_label_mask=None
+		semantic_output=None
 		#total_loss.backward()
 		#optimizer.step()
 		

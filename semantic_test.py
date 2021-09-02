@@ -36,11 +36,12 @@ parser.add_argument('--if_BN', dest= "if_BN", default=True, help="if use BN in t
 parser.add_argument('--if_remission', dest= "if_remission", default=True, help="if concatenate remmision in the input")
 parser.add_argument('--if_range', dest= "if_range", default=True, help="if concatenate range in the input")
 parser.add_argument('--if_range_mask', dest= "if_range_mask", default=True, help="if if_range_mask")
-parser.add_argument('--if_perturb', dest= "if_perturb", default=False, help="if if_perturb")
+parser.add_argument('--with_normal', dest= "with_normal", default=True, help="if concatenate normal in the input")
+
 
 
 # training settins
-parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=22,help="0 or from the beginning, or from the middle")
+parser.add_argument('--eval_epoch',  dest= "eval_epoch", default=25,help="0 or from the beginning, or from the middle")
 parser.add_argument('--lr_policy',  dest= "lr_policy", default=1,help="lr_policy: 1, 2 or 0")
 parser.add_argument('--weight_WCE',  dest= "weight_WCE", default=1.0,help="weight_WCE")
 parser.add_argument('--weight_LS',  dest= "weight_LS", default=3.0,help="weight_LS")
@@ -60,12 +61,12 @@ args = parser.parse_args()
 
 inv_label_dict={0:0,1:10,2:11,3:15,4:18,5:20,6:30,7:31,8:32,9:40,10:44,11:48,12:49,13:50,14:51,15:70,16:71,17:72,18:80,19:81}
 
+dataset_train=Dataset_semanticKITTI(root=args.root,split='train',is_train=True, range_img_size=(args.range_y,args.range_x),if_aug='True', if_range_mask=args.if_range_mask,if_remission=args.if_remission, if_range=args.if_range,with_normal=args.with_normal)
 
 
 
 save_path="./save_semantic/"
-#temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(args.if_BN)+"_remission"+str(args.if_remission)+"_range"+str(args.if_range)+"_rangemask"+str(args.if_range_mask)+"_"+str(args.batch_size)+"_"+str(args.weight_WCE)+"_"+str(args.weight_LS)+"_lr"+str(args.lr_policy)+"_top_k"+str(args.top_k_percent_pixels)
-temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(args.if_BN)+"_remission"+str(args.if_remission)+"_range"+str(args.if_range)+"_rangemask"+str(args.if_range_mask)+"_perturb"+str(args.if_perturb)+"_"+str(args.batch_size)+"_"+str(args.weight_WCE)+"_"+str(args.weight_LS)+"_lr"+str(args.lr_policy)+"_top_k"+str(args.top_k_percent_pixels)
+temp_path=args.backbone+"_"+str(args.range_x)+"_"+str(args.range_y)+"_BN"+str(args.if_BN)+"_remission"+str(args.if_remission)+"_range"+str(args.if_range)+"_normal"+str(args.with_normal)+"_rangemask"+str(args.if_range_mask)+"_"+str(args.batch_size)+"_"+str(args.weight_WCE)+"_"+str(args.weight_LS)+"_lr"+str(args.lr_policy)+"_top_k"+str(args.top_k_percent_pixels)
 save_path=save_path+temp_path+"/"
 
 
@@ -80,7 +81,7 @@ if args.backbone=="ResNet34_aspp_2":
 
 
 if args.backbone=="ResNet34_point":
-	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range)
+	Backend=resnet34_point(if_BN=args.if_BN,if_remission=args.if_remission,if_range=args.if_range,with_normal=args.with_normal)
 	S_H=SemanticHead(20,1024)
 
 
@@ -165,6 +166,11 @@ for seq_name in all_seq_list:
 			input_tensor=torch.cat([xyz,remission,range_img],axis=1)
 		if not args.if_remission and not args.if_range:
 			input_tensor=xyz
+		if args.with_normal:
+			normal_image=dataset_train.calculate_normal(dataset_train.fill_spherical(A.proj_range))
+			normal_image=normal_image*np.transpose([A.proj_mask,A.proj_mask,A.proj_mask],[1,2,0])
+			normal_image=torch.unsqueeze(FF.to_tensor(normal_image.astype(np.float32)),axis=0)
+			input_tensor=torch.cat([input_tensor,normal_image],axis=1)     
 		input_tensor=input_tensor.to(device)
 		with torch.cuda.amp.autocast(enabled=args.if_mixture):
 			semantic_output=model(input_tensor)

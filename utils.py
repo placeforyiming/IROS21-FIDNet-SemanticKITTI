@@ -103,58 +103,57 @@ def get_lr_manually_1(current_epoch):
     if current_epoch==4:
         return 0.002
     if current_epoch==5:
-        return 0.0018
-    if current_epoch==6:
         return 0.0016
-    if current_epoch==7:
-        return 0.0014
-    if current_epoch==8:
-        return 0.0008
-    if current_epoch==9:
+    if current_epoch==6:
         return 0.0012
-    if current_epoch==10:
-        return 0.0006
-    if current_epoch==11:
+    if current_epoch==7:
         return 0.0008
-    if current_epoch>11:
+    if current_epoch==8:
+        return 0.0012
+    if current_epoch==9:
+        return 0.0006
+    if current_epoch==10:
+        return 0.0008
+    if current_epoch==11:
         return 0.0004
+    if current_epoch==12:
+        return 0.0002
 
-'''
-def get_lr_manually_1(current_epoch):
+
+
+def get_lr_manually_2(current_epoch):
 	current_epoch=int(current_epoch/2)
 	if current_epoch==0:
-		return 0.0002
+		return 0.0004
 	if current_epoch==1:
-		return 0.0004
+		return 0.0008
 	if current_epoch==2:
-		return 0.0006
+		return 0.0012
 	if current_epoch==3:
-		return 0.0008
-	if current_epoch==4:
-		return 0.001
-	if current_epoch==5:
-		return 0.0012
-	if current_epoch==6:
-		return 0.0014
-	if current_epoch==7:
 		return 0.0016
-	if current_epoch==8:
+	if current_epoch==4:
+		return 0.002
+	if current_epoch==5:
+		return 0.0018
+	if current_epoch==6:
+		return 0.0016
+	if current_epoch==7:
 		return 0.0014
-	if current_epoch==9:
+	if current_epoch==8:
 		return 0.0012
-	if current_epoch==10:
+	if current_epoch==9:
 		return 0.001
-	if current_epoch==11:
+	if current_epoch==10:
 		return 0.0008
-	if current_epoch==12:
+	if current_epoch==11:
 		return 0.0006
-	if current_epoch==13:
+	if current_epoch==12:
 		return 0.0004
-	if current_epoch==14:
+	if current_epoch==13:
 		return 0.0002
-	if current_epoch==15:    
-		return 0.0001
-'''
+	if current_epoch>13:
+		return 0.0002
+	
 
 
 

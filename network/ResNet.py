@@ -448,11 +448,9 @@ class ResNet_ASPP_2(nn.Module):
         return self._forward_impl(x)
 
 
-
-
 class ResNet_34_point(nn.Module):
 
-    def __init__(self, block, layers,if_BN,if_remission, if_range,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
+    def __init__(self, block, layers,if_BN,if_remission, if_range, with_normal,zero_init_residual=False,norm_layer=None,groups=1, width_per_group=64):
         super(ResNet_34_point, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -460,6 +458,7 @@ class ResNet_34_point(nn.Module):
         self.if_BN=if_BN
         self.if_remission=if_remission
         self.if_range=if_range
+        self.with_normal=with_normal
 
         self.inplanes = 512
         self.dilation = 1
@@ -467,12 +466,26 @@ class ResNet_34_point(nn.Module):
         self.groups = groups
         self.base_width = width_per_group
 
-        if self.if_remission and not self.if_range:
-            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
-        if self.if_range and self.if_range:
-            self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
-        if not self.if_remission and not self.if_range:        
+        if not self.if_remission and not self.if_range and not self.with_normal:        
             self.conv1 = nn.Conv2d(3, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.bn_0 = nn.BatchNorm2d(64)
+            self.relu_0 = nn.LeakyReLU()
+
+        if self.if_remission and not self.if_range and not self.with_normal:
+            self.conv1 = nn.Conv2d(4, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.bn_0 = nn.BatchNorm2d(64)
+            self.relu_0 = nn.LeakyReLU()
+
+        if self.if_range and self.if_range and not self.with_normal:
+            self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.bn_0 = nn.BatchNorm2d(64)
+            self.relu_0 = nn.LeakyReLU()
+
+        if self.if_range and self.if_range and self.with_normal:
+            self.conv1 = nn.Conv2d(8, 64, kernel_size=1, stride=1, padding=0,bias=True)
+            self.bn_0 = nn.BatchNorm2d(64)
+            self.relu_0 = nn.LeakyReLU()
+
 
 
    
@@ -548,6 +561,8 @@ class ResNet_34_point(nn.Module):
         outputs = {}
         # See note [TorchScript super()]
         x = self.conv1(x)
+        x = self.bn_0(x)
+        x = self.relu_0(x)
         x = self.conv2(x)
         x = self.bn(x)
         x = self.relu(x)
@@ -565,12 +580,12 @@ class ResNet_34_point(nn.Module):
         x_3 = self.layer3(x_2)  # 1/4
         x_4 = self.layer4(x_3)  # 1/8
 
-        res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
+        #res_1 = F.interpolate(x_1, size=x.size()[2:], mode='bilinear', align_corners=True)
         res_2 = F.interpolate(x_2, size=x.size()[2:], mode='bilinear', align_corners=True)
         res_3 = F.interpolate(x_3, size=x.size()[2:], mode='bilinear', align_corners=True)
         res_4 = F.interpolate(x_4, size=x.size()[2:], mode='bilinear', align_corners=True)
         
-        res=[x,res_1,res_2,res_3,res_4]
+        res=[x,x_1,res_2,res_3,res_4]
 
         return torch.cat(res, dim=1)
 
@@ -605,8 +620,8 @@ def _resnet_aspp_2(arch, block, layers, if_BN,if_remission,if_range):
 
     return model
 
-def _resnet_point(arch, block, layers, if_BN,if_remission,if_range):
-    model = ResNet_34_point(block, layers, if_BN,if_remission,if_range,zero_init_residual=False)
+def _resnet_point(arch, block, layers, if_BN,if_remission,if_range,with_normal):
+    model = ResNet_34_point(block, layers, if_BN,if_remission,if_range,with_normal,zero_init_residual=False)
 
     return model
 
@@ -650,14 +665,14 @@ def resnet34_aspp_2(if_BN,if_remission,if_range):
     """
     return _resnet_aspp_2('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
 
-def resnet34_point(if_BN,if_remission,if_range):
+def resnet34_point(if_BN,if_remission,if_range,with_normal):
     """ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet_point('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range)
+    return _resnet_point('resnet34',BasicBlock, [3, 4, 6, 3], if_BN,if_remission,if_range,with_normal)
 
 
 
