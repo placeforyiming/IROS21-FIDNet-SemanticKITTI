@@ -8,6 +8,16 @@ A demo video of our IROS paper on test set:
 <img src="https://github.com/placeforyiming/IROS21-FIDNet-SemanticKITTI/blob/main/semantic.gif?raw=true" alt="Figure" style="width: 540px; height: 280px;" hspace="10" align="left"/>
 <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 ## Dataset Organization
+
+    .
+    ├── ...
+    ├── test                    # Test files (alternatively `spec` or `tests`)
+    │   ├── benchmarks          # Load and stress tests
+    │   ├── integration         # End-to-end, integration tests (alternatively `e2e`)
+    │   └── unit                # Unit tests
+    └── ...
+    
+    
 IROS21-FIDNet-SemanticKITTI
           |
           Dataset
