@@ -11,13 +11,13 @@ A demo video of our IROS paper on test set:
 
     IROS21-FIDNet-SemanticKITTI
     ├──  Dataset
-            ├── semanticKITTI                 
-                ├── semantic-kitti-api-master         
-                ├── semantic-kitti.yaml
-                ├── data_odometry_velodyne ── dataset ── sequences ── train, val, test         # each folder contains the corresponding sequence folders 00,01...
-                ├── data_odometry_labels ── dataset ── sequences ── train, val, test           # each folder contains the corresponding sequence folders 00,01...
-                └── data_odometry_calib        
-            
+    ├        ├── semanticKITTI                 
+    ├            ├── semantic-kitti-api-master         
+    ├            ├── semantic-kitti.yaml
+    ├            ├── data_odometry_velodyne ── dataset ── sequences ── train, val, test         # each folder contains the corresponding sequence folders 00,01...
+    ├            ├── data_odometry_labels ── dataset ── sequences ── train, val, test           # each folder contains the corresponding sequence folders 00,01...
+    ├            └── data_odometry_calib        
+    ├──  save_semantic ── ResNet34_point_2048_64_BNTrue_remissionTrue_rangeTrue_normalTrue_rangemaskTrue_2_1.0_3.0_lr1_top_k0.15
 
     
 
