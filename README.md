@@ -14,4 +14,10 @@ A demo video of our IROS paper on test set:
 docker pull pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
 ```
 ````
+```` 
+For training inside the docker:
+```
+python semantic_main.py
+```
+````
 
