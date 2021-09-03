@@ -9,25 +9,17 @@ A demo video of our IROS paper on test set:
 <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 ## Dataset Organization
 
-    .
-    ├── ...
-    ├── test                    # Test files (alternatively `spec` or `tests`)
-    │   ├── benchmarks          # Load and stress tests
-    │   ├── integration         # End-to-end, integration tests (alternatively `e2e`)
-    │   └── unit                # Unit tests
-    └── ...
+    IROS21-FIDNet-SemanticKITTI
+    ├──  Dataset
+            ├── semanticKITTI                 
+                ├── semantic-kitti-api-master         
+                ├── semantic-kitti.yaml
+                ├── data_odometry_velodyne
+                ├── data_odometry_labels
+                └── data_odometry_calib        
+            
+
     
-    
-IROS21-FIDNet-SemanticKITTI
-          |
-          Dataset
-              |
-          semanticKITTI
-              |-semantic-kitti-api-master
-              |-semantic-kitti.yaml
-              |-data_odometry_velodyne
-              |-data_odometry_labels
-              |-data_odometry_calib
 
 ## How to run
 
