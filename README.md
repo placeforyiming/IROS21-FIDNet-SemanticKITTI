@@ -20,4 +20,13 @@ For training inside the docker:
 python semantic_main.py
 ```
 ````
-
+For evaluate inside the docker:
+```
+python semantic_inference.py
+```
+````
+Generate the test predictions:
+```
+python semantic_test.py
+```
+````
