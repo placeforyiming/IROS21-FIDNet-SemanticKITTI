@@ -1,7 +1,7 @@
 # FIDNet_SemanticKITTI
 
 ## Motivation
-Implementing complicated network modules with only one or two points improvement on hardwares is tedious. So here we propose a LiDAR semantic segmentation pipeline on 2D range image just with the most commonly used operators, convolutional operator and bilinear upsample operator. The designed network structure is simple but efficient. We make it achieve the comparable performance with the state-of-the-art projection-based solutions.   
+Implementing complicated network modules with only one or two points improvement on hardware is tedious. So here we propose a LiDAR semantic segmentation pipeline on 2D range image just with the most commonly used operators, convolutional operator and bilinear upsample operator. The designed network structure is simple but efficient. We make it achieve the comparable performance with the state-of-the-art projection-based solutions.   
 
 A demo video of our IROS paper on test set:
 <br />
