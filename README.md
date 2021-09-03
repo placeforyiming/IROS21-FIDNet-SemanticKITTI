@@ -17,7 +17,7 @@ A demo video of our IROS paper on test set:
     ├            ├── data_odometry_velodyne ── dataset ── sequences ── train, val, test         # each folder contains the corresponding sequence folders 00,01...
     ├            ├── data_odometry_labels ── dataset ── sequences ── train, val, test           # each folder contains the corresponding sequence folders 00,01...
     ├            └── data_odometry_calib        
-    ├──  save_semantic ── ResNet34_point_2048_64_BNTrue_remissionTrue_rangeTrue_normalTrue_rangemaskTrue_2_1.0_3.0_lr1_top_k0.15
+    ├──  save_semantic 
 
     
 
@@ -46,3 +46,6 @@ Generate the test predictions:
 python semantic_test.py
 ```
 ````
+
+## Pretrained weight
+Download link: https://drive.google.com/drive/folders/1Zv2i-kYcLH7Wmqnh4nTY2KbE_ZyGTmyA?usp=sharing
