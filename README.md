@@ -62,12 +62,15 @@ After downloading, move the file 25 into
 
 Then directly run the evaluate python script should can work.
 
-After generate the predicted label on validation set, one can simply run:
+After generating the predicted label on validation set, one can simply run:
 ````
 ```
 bash evaluation.sh
 ```
 ````
-Some change of local path may need to be done. Just follow the error to change then, should be easy. 
+Some changes of local path may need to be done. Just follow the error to change them, should be easy. 
 
 This checkpoint achieves 58.8 mIOU on the validation set.
+
+## Train from the scatch
+The default settings should can give a good result. The performance may has one or two points difference due to the randomness. One can explore more based on our pipeline.
