@@ -15,7 +15,7 @@ A demo video of our IROS paper on test set:
                 ├── semantic-kitti-api-master         
                 ├── semantic-kitti.yaml
                 ├── data_odometry_velodyne
-                ├── data_odometry_labels
+                ├── data_odometry_labels ── dataset ── sequences ── train, val, test
                 └── data_odometry_calib        
             
 
