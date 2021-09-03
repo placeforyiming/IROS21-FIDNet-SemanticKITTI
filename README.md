@@ -14,8 +14,8 @@ A demo video of our IROS paper on test set:
             ├── semanticKITTI                 
                 ├── semantic-kitti-api-master         
                 ├── semantic-kitti.yaml
-                ├── data_odometry_velodyne
-                ├── data_odometry_labels ── dataset ── sequences ── train, val, test
+                ├── data_odometry_velodyne ── dataset ── sequences ── train, val, test         # each folder contains the corresponding sequence folders 00,01...
+                ├── data_odometry_labels ── dataset ── sequences ── train, val, test           # each folder contains the corresponding sequence folders 00,01...
                 └── data_odometry_calib        
             
 
