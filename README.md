@@ -5,7 +5,7 @@ Implementing complicated network modules with only one or two points improvement
 
 The network structure:
 <br />
-<img src="https://github.com/placeforyiming/IROS21-FIDNet-SemanticKITTI/blob/main/network_structure.png?raw=true" alt="Figure" style="width: 740px; height: 280px;" hspace="10" align="left"/>
+<img src="https://github.com/placeforyiming/IROS21-FIDNet-SemanticKITTI/blob/main/network_structure.png?raw=true" alt="Figure" style="width: 740px; height: 200px;" hspace="10" align="left"/>
 <br />
 
 A demo video of our IROS paper on test set:
