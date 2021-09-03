@@ -73,4 +73,4 @@ Some changes of local path may need to be done. Just follow the error to change 
 This checkpoint achieves 58.8 mIOU on the validation set.
 
 ## Train from the scatch
-The default settings should can give a good result. The performance may has one or two points difference due to the randomness. One can explore more based on our pipeline.
+The default setting should can give a good result. The performance may has one or two point difference due to the randomness. One can explore more based on our pipeline.
