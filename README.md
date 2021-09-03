@@ -56,9 +56,12 @@ python semantic_test.py
 ## Pretrained weight
 Download link: https://drive.google.com/drive/folders/1Zv2i-kYcLH7Wmqnh4nTY2KbE_ZyGTmyA?usp=sharing
 
-After downloading, move the file 25 into 
+After downloading, move the file 25 into
+
 ./save_semantic/ResNet34_point_2048_64_BNTrue_remissionTrue_rangeTrue_normalTrue_rangemaskTrue_2_1.0_3.0_lr1_top_k0.15/
+
 Then directly run the evaluate python script should can work.
+
 After generate the predicted label on validation set, one can simply run:
 ````
 ```
@@ -66,4 +69,5 @@ bash evaluation.sh
 ```
 ````
 Some change of local path may need to be done. Just follow the error to change then, should be easy. 
+
 This checkpoint achieves 58.8 mIOU on the validation set.
