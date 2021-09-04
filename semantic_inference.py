@@ -99,7 +99,7 @@ model.to(device)
 
 model.load_state_dict(torch.load(save_path+str(args.eval_epoch)))
 
-
+print (get_n_params(model))
 
 
 lidar_list=glob.glob(args.root+'/data_odometry_velodyne/*/*/'+'val'+'/*/*/*.bin')
