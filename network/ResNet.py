@@ -476,12 +476,12 @@ class ResNet_34_point(nn.Module):
             self.bn_0 = nn.BatchNorm2d(64)
             self.relu_0 = nn.LeakyReLU()
 
-        if self.if_range and self.if_range and not self.with_normal:
+        if self.if_remission and self.if_range and not self.with_normal:
             self.conv1 = nn.Conv2d(5, 64, kernel_size=1, stride=1, padding=0,bias=True)
             self.bn_0 = nn.BatchNorm2d(64)
             self.relu_0 = nn.LeakyReLU()
 
-        if self.if_range and self.if_range and self.with_normal:
+        if self.if_remission and self.if_range and self.with_normal:
             self.conv1 = nn.Conv2d(8, 64, kernel_size=1, stride=1, padding=0,bias=True)
             self.bn_0 = nn.BatchNorm2d(64)
             self.relu_0 = nn.LeakyReLU()
