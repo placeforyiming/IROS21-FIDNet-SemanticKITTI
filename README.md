@@ -79,3 +79,18 @@ This checkpoint achieves 58.8 mIOU on the validation set.
 
 ## Train from the scatch
 The default setting should can give a good result. The performance may has one or two point difference due to the randomness. One can explore more based on our pipeline.
+
+
+## Publication ##
+Please cite the paper if you use this code:
+
+```
+@article{zhao2021fidnet,
+  title={FIDNet: LiDAR Point Cloud Semantic Segmentation with Fully Interpolation Decoding},
+  author={Zhao, Yiming and Bai, Lin and Huang, Xinming},
+  journal={arXiv preprint arXiv:2109.03787},
+  year={2021}
+}
+
+
+```
