@@ -170,7 +170,7 @@ for current_epoch in range(args.start_epoch,args.total_epoch):
 		#print (np.shape(semantic_label))
 		input_tensor=input_tensor.to(device)
 		semantic_label=torch.squeeze(semantic_label,axis=1).to(device)
-		semantic_lalel_mask=torch.squeeze(semantic_label_mask,axis=1)
+		semantic_label_mask=torch.squeeze(semantic_label_mask,axis=1)
 
 		with torch.cuda.amp.autocast(enabled=args.if_mixture):
 			semantic_output=model(input_tensor)
