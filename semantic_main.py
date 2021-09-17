@@ -186,14 +186,12 @@ for current_epoch in range(args.start_epoch,args.total_epoch):
 
 			LS_loss=LS(TF.softmax(semantic_output, dim=1), semantic_label)
 			total_loss=args.weight_WCE*loss_ce + args.weight_LS*LS_loss.mean()
-		loss_per_epoch+=total_loss
+		loss_per_epoch+=total_loss.item()
 
 		optimizer.zero_grad()
 		scaler.scale(total_loss).backward()
 		#torch.nn.utils.clip_grad_value_(model.parameters(), 1.0)
 		scaler.step(optimizer)
-		if args.lr_policy==0:
-			scheduler.step()
 		scaler.update()
 		input_tensor=None
 		semantic_label=None
